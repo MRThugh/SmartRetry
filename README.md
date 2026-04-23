@@ -1,417 +1,177 @@
-# SmartRetry
+<div align="center">
+  
+  # 🚀 SmartRetry
+  
+  **The Ultimate Resilience Arsenal for Python Applications.**
 
-A lightweight, dependency‑free retry decorator for Python with configurable retries, exponential backoff, logging support, and optional fallback handling.
+  [![Python Version](https://img.shields.io/badge/python-3.8%2B-blue.svg?style=for-the-badge&logo=python)](https://www.python.org/)
+  [![Version](https://img.shields.io/badge/version-1.0.0-success.svg?style=for-the-badge)](#)
+  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+  [![Zero Dependencies](https://img.shields.io/badge/dependencies-zero-brightgreen.svg?style=for-the-badge)](#)
+  
+  *Built with ❤️ by [Ali Kamrani](https://github.com/MRThugh)*
 
-**Author:** Ali Kamrani  
-**GitHub:** https://github.com/MRThugh
+  <p align="center">
+    Stop letting flaky APIs, unstable database connections, and temporary network drops crash your applications. <b>SmartRetry</b> is a pure-Python, zero-dependency, ultra-lightweight library that wraps your functions in a bulletproof vest of exponential backoffs and smart fallbacks.
+  </p>
 
----
-
-# Overview
-
-**SmartRetry** is a simple and reliable Python library that helps you automatically retry functions when they fail.
-
-In real applications, operations like:
-
-- API calls  
-- Database queries  
-- Network requests  
-- File operations  
-
-may fail temporarily. Retrying these operations often solves the problem, but implementing retry logic repeatedly across projects becomes messy.
-
-SmartRetry solves this by providing a clean **decorator‑based retry system** with configurable behavior.
-
-Key features:
-
-- Simple and Pythonic **retry decorator**
-- **Exponential backoff** for retry delays
-- **Zero external dependencies**
-- Optional **fallback function**
-- Support for **specific exception types**
-- Optional **logging support**
-- Clean and minimal API
-- Fully testable design
+</div>
 
 ---
 
-# Installation
-
-## Install locally (development mode)
-
-If you cloned the repository:
-
-```
-pip install -e .
-```
-
-## Install via pip (after publishing to PyPI)
-
-```
-pip install smartretry
-```
+## 📑 Table of Contents
+- [✨ Why SmartRetry?](#-why-smartretry)
+- [📦 Installation](#-installation)
+- [⚡ Quick Start](#-quick-start)
+- [🛠️ Core Features & Usage](#️-core-features--usage)
+  - [1. Exponential Backoff](#1-exponential-backoff)
+  - [2. Precise Exception Filtering](#2-precise-exception-filtering)
+  - [3. The Ultimate Safety Net: Fallbacks](#3-the-ultimate-safety-net-fallbacks)
+- [🧮 How The Math Works](#-how-the-math-works)
+- [📚 API Reference](#-api-reference)
+- [🧪 Comprehensive Testing](#-comprehensive-testing)
+- [📄 License](#-license)
 
 ---
 
-# Quick Start
+## ✨ Why SmartRetry?
 
-Basic example:
+Most retry libraries are either too complex, heavily bloated with third-party dependencies, or lack proper type safety. **SmartRetry** is different:
 
-```python
+- **Zero Dependencies:** Built entirely on standard Python libraries.
+- **Fail-Fast Design:** Only retry the exact exceptions you want. Everything else crashes immediately, saving you compute time.
+- **Eager Validation:** Configuration is validated at decoration time, not execution time. If you misconfigure it, your app won't even boot.
+- **Seamless Fallbacks:** If the server is truly dead, seamlessly route the user to offline/cached data without throwing an error.
+- **Silent Observability:** Integrated natively with Python's `logging` module out of the box.
+
+---
+
+## 📦 Installation
+
+Since SmartRetry is zero-dependency, installation is lightning fast.
+
+Clone the repository and install it locally:
+```bash
+git clone https://github.com/MRThugh/SmartRetry.git
+cd SmartRetry
+pip install -e
+```
+---
+
+## ⚡ Quick Start
+
+Just import the `@retry` decorator and slap it onto any flaky function!
+
+python
+import random
 from smartretry import retry
 
-@retry(
-    max_retries=3,
-    base_delay=0.5,
-    backoff_factor=2.0,
-    exceptions=(ConnectionError,)
-)
+@retry(max_retries=3, base_delay=1.0)
 def fetch_data():
-    print("Attempting request...")
-    raise ConnectionError("Network unstable")
+if random.random() < 0.7:
+raise ConnectionError("Network blip!")
+return "✅ Data fetched successfully!"
 
-fetch_data()
-```
-
-Example output:
-
-```
-Attempting request...
-Retry 1/3 after 0.5 seconds
-Attempting request...
-Retry 2/3 after 1.0 seconds
-Attempting request...
-Retry 3/3 after 2.0 seconds
-```
+print(fetch_data())
+*SmartRetry catches the `ConnectionError`, waits, and tries again automatically.*
 
 ---
 
-# How SmartRetry Works
+## 🛠️ Core Features & Usage
 
-SmartRetry is built around three core components.
+### 1. Exponential Backoff
+Slamming a broken server with immediate retries makes the problem worse. SmartRetry uses exponential backoff to give servers breathing room.
 
-## 1. RetryConfig
+python
+@retry(max_retries=4, base_delay=0.5, backoff_factor=2.0)
+def call_heavy_api():
+# Attempt 1: Fails -> Waits 0.5s
+# Attempt 2: Fails -> Waits 1.0s
+# Attempt 3: Fails -> Waits 2.0s
+# Attempt 4: Fails -> Waits 4.0s
+pass
 
-A configuration object responsible for:
+### 2. Precise Exception Filtering
+Don't retry a `KeyError` or an `AuthenticationError` 100 times. Tell SmartRetry *exactly* what to forgive.
 
-- storing retry parameters
-- validating inputs
-- ensuring configuration consistency
+python
+class NetworkTimeout(Exception): pass
+class AuthError(Exception): pass
 
-The configuration is immutable once created.
+# ONLY retry on NetworkTimeout. If AuthError happens, it crashes immediately!
+@retry(max_retries=3, exceptions=(NetworkTimeout,))
+def login(user, password):
+pass
 
----
+### 3. The Ultimate Safety Net: Fallbacks
+What if all retries fail? Instead of crashing the user's app, route them to a fallback function. 
+**Rule:** *Your fallback must accept the exact same arguments as your original function.*
 
-## 2. Retry Engine
+python
+def load_cached_weather(city: str) -> dict:
+print(f"⚠️ API down. Serving cached data for {city}.")
+return {"city": city, "temp": "Unknown (Offline)"}
 
-The internal retry engine is responsible for:
+@retry(max_retries=3, exceptions=(TimeoutError,), fallback=load_cached_weather)
+def get_live_weather(city: str) -> dict:
+raise TimeoutError("Server is completely dead!")
 
-1. Running the wrapped function
-2. Catching retryable exceptions
-3. Waiting for a calculated delay
-4. Retrying execution
-5. Raising an error or calling fallback when retries are exhausted
-
----
-
-## 3. Retry Decorator
-
-The `retry` decorator wraps your function and automatically applies the retry logic when the function is executed.
-
-Example:
-
-```python
-@retry(max_retries=3)
-def my_function():
-    ...
-```
-
----
-
-# Decorator Parameters
-
-The retry decorator accepts several parameters that control retry behavior.
-
-### max_retries
-
-Type: `int`  
-Default: `3`
-
-Number of retry attempts after the first failure.
-
-Example:
-
-```
-max_retries=3
-```
-
-Total attempts = **1 initial try + 3 retries**
+# This will fail 3 times, then silently return the cached data!
+data = get_live_weather("Tehran") 
 
 ---
 
-### base_delay
+## 🧮 How The Math Works
 
-Type: `float`  
-Default: `1.0`
+SmartRetry calculates the wait time before each retry attempt using the following formula:
 
-The initial delay before the first retry.
+$$delay = base\_delay \times backoff\_factor^{attempt}$$
 
----
+*(Note: The `attempt` index is zero-based. The first retry is attempt 0).*
 
-### backoff_factor
-
-Type: `float`  
-Default: `2.0`
-
-Controls exponential delay growth.
+**Example with `base_delay=2.0` and `backoff_factor=3.0`:**
+- **Retry 1 (Attempt 0):** $2.0 \times 3.0^0 = 2.0$ seconds
+- **Retry 2 (Attempt 1):** $2.0 \times 3.0^1 = 6.0$ seconds
+- **Retry 3 (Attempt 2):** $2.0 \times 3.0^2 = 18.0$ seconds
 
 ---
 
-### exceptions
+## 📚 API Reference
 
-Type: `tuple`  
-Default:
+### `@retry(...)`
 
-```
-(Exception,)
-```
+| Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `max_retries` | `int` | `3` | Maximum extra attempts after the first failure. Must be $\ge 0$. |
+| `base_delay` | `float` | `1.0` | Seconds to wait before the *first* retry. Must be $\ge 0$. |
+| `backoff_factor`| `float` | `2.0` | Exponential multiplier applied each round. Must be $\ge 1.0$. |
+| `exceptions` | `Tuple` | `(Exception,)` | Tuple of Exception classes to catch. Unlisted exceptions crash immediately. |
+| `fallback` | `Callable` | `None` | Function to call if all retries fail. Must share the original function's signature. |
+| `logger` | `Logger` | `None` | Custom Python logger. Defaults to `smartretry.core`. |
 
-Defines which exceptions should trigger retries.
-
-Example:
-
-```python
-exceptions=(ConnectionError, TimeoutError)
-```
-
----
-
-### fallback
-
-Type: `callable`  
-Default: `None`
-
-Function to execute if all retries fail.
+### `RetryExhaustedError`
+Raised when a function fails on every single attempt and no `fallback` is provided. Contains attributes:
+- `attempts`: Total number of attempts made.
+- `last_error`: The final exception that triggered the failure.
+- `func_name`: The name of the function that failed.
 
 ---
 
-### logger
+## 🧪 Comprehensive Testing
+SmartRetry comes with a hardcore, isolated test suite covering statistical probabilities, delay math, eager validations, and metadata preservation. 
 
-Type: `logging.Logger`  
-Default: `None`
-
-Optional logger used to record retry attempts.
-
----
-
-# Exponential Backoff
-
-SmartRetry uses exponential backoff to increase delays between retries.
-
-Formula:
-
-```
-delay = base_delay * (backoff_factor ** attempt)
-```
-
-Example:
-
-```
-base_delay = 1
-backoff_factor = 2
-```
-
-Retry delays:
-
-```
-Attempt 1 → 1 second
-Attempt 2 → 2 seconds
-Attempt 3 → 4 seconds
-Attempt 4 → 8 seconds
-```
-
-This helps prevent overwhelming unstable systems.
-
----
-
-# Using a Fallback Function
-
-A fallback function can provide a safe result if all retries fail.
-
-Example:
-
-```python
-from smartretry import retry
-
-def cached_response():
-    return {"status": "cached"}
-
-@retry(max_retries=2, fallback=cached_response)
-def fetch_from_api():
-    raise RuntimeError("API unavailable")
-
-result = fetch_from_api()
-print(result)
-```
-
-Output:
-
-```
-{'status': 'cached'}
-```
-
----
-
-# Retrying Specific Exceptions Only
-
-Sometimes you only want to retry certain types of failures.
-
-Example:
-
-```python
-@retry(exceptions=(TimeoutError, ConnectionError))
-def call_api():
-    ...
-```
-
-If another exception occurs (like `TypeError`), it will be raised immediately without retrying.
-
----
-
-# Custom Logger Example
-
-You can pass your own logger to monitor retry attempts.
-
-```python
-import logging
-from smartretry import retry
-
-logger = logging.getLogger("retry")
-
-@retry(max_retries=3, logger=logger)
-def unstable_operation():
-    raise RuntimeError("Failure")
-
-unstable_operation()
-```
-
----
-
-# RetryExhaustedError
-
-If all retries fail and no fallback function is provided, SmartRetry raises a custom exception.
-
-Example:
-
-```python
-from smartretry import RetryExhaustedError
-
-try:
-    my_function()
-except RetryExhaustedError as error:
-    print("Attempts:", error.attempts)
-    print("Last error:", error.last_error)
-```
-
-This exception provides useful debugging information.
-
----
-
-# Running Tests
-
-The repository includes a comprehensive test suite.
-
-To run tests:
-
-```
+To run the tests:
+bash
 python test_smartretry.py
-```
-
-The tests verify:
-
-- successful execution
-- retry behavior
-- exception handling
-- fallback logic
-- configuration validation
-- delay calculation
 
 ---
 
-# Project Structure
+## 📄 License
 
-```
-SmartRetry/
-│
-├── setup.py
-├── test_smartretry.py
-│
-└── smartretry/
-    ├── core.py
-    └── __init__.py
-```
-
-## smartretry/core.py
-
-Contains the main implementation:
-
-- `RetryConfig`
-- `RetryExhaustedError`
-- retry execution logic
-- retry decorator
+This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for more details.
 
 ---
-
-## smartretry/__init__.py
-
-Exposes the public API:
-
-```python
-from smartretry.core import retry, RetryExhaustedError
-```
-
-This allows users to simply write:
-
-```python
-from smartretry import retry
-```
-
----
-
-# Design Goals
-
-SmartRetry was designed with the following goals:
-
-- simplicity
-- reliability
-- minimal dependencies
-- clear and maintainable API
-- easy integration into existing projects
-
----
-
-# License
-
-This project is licensed under the **MIT License**.
-
----
-
-# Contributing
-
-Contributions are welcome.
-
-You can help by:
-
-- reporting bugs
-- suggesting improvements
-- submitting pull requests
-- improving documentation
-
----
-
-# Author
-
-Ali Kamrani
-
-GitHub  
-https://github.com/MRThugh
+<div align="center">
+  <i>"Make your code bulletproof."</i><br>
+  <b>— Ali Kamrani</b>
+</div>
