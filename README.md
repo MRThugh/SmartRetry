@@ -1,6 +1,12 @@
 <div align="center">
   
   # 🚀 SmartRetry
+  <p align="center">
+  <img 
+    src="https://raw.githubusercontent.com/MRThugh/MRThugh/main/badge.svg"
+    width="50%" 
+  />
+</p>
   
   **The Ultimate Resilience Arsenal for Python Applications.**
 
