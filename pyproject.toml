@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=61.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "smartretry-lib"
+version = "1.0.0"
+authors = [
+    { name = "Ali Kamrani", email = "kamrani.exe@gmail.com" }
+]
+description = "A pure Python, offline-capable resilience framework providing retry, circuit breaker, bulkhead, rate limiter, resilient cache, fallback policies, and advanced execution observability."
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+keywords = ["retry", "decorator", "backoff", "resilience", "flaky", "async", "observability", "circuit-breaker", "bulkhead", "rate-limiter", "fallback", "cache"]
+
+[project.urls]
+Homepage = "https://github.com/MRThugh/SmartRetry"
+Repository = "https://github.com/MRThugh/SmartRetry"
+
+[tool.setuptools.package-data]
+smartretry = ["py.typed"]
